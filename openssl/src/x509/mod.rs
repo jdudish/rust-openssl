@@ -798,6 +798,13 @@ impl X509ReqRef {
             X509NameRef::from_ptr(name)
         }
     }
+
+    pub fn public_key(&self) -> Result<PKey, ErrorStack> {
+        unsafe {
+            let pkey = ffi::X509_REQ_get_pubkey(self.as_ptr());
+            Ok(PKey::from_ptr(pkey))
+        }
+    }
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]

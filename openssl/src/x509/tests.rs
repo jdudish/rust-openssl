@@ -283,3 +283,22 @@ fn clone_x509() {
     let cert = X509::from_pem(cert).unwrap();
     cert.clone();
 }
+
+#[test]
+fn x509_req_pubkey() {
+    let req = include_bytes!("../../test/req.pem");
+    let req = X509Req::from_pem(req).unwrap();
+    let pkey = req.public_key().unwrap();
+    assert_eq!(
+        pkey.public_key_to_pem().unwrap().as_slice(),
+        "-----BEGIN PUBLIC KEY-----\n\
+         MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAofgWCuLjybRlzo0tZWJj\n\
+         NiuSfb4p4fAkd/wWJcyQoTbji9k0l8W26mPddxHmfHQp+Vaw+4qPCJrcS2mJPMEz\n\
+         P1Pt0Bm4d4QlL+yRT+SFd2lZS+pCgNMsD1W/YpRPEwOWvG6b32690r2jZ47soMZo\n\
+         9wGzjb/7OMg0LOL+bSf63kpaSHSXndS5z5rexMdbBYUsLA9e+KXBdQOS+UTo7WTB\n\
+         EMa2R2CapHg665xsmtdVMTBQY4uDZlxvb3qCo5ZwKh9kG4LT6/I5IhlJH7aGhyxX\n\
+         FvUK+DWNmoudF8NAco9/h9iaGNj8q2ethFkMLs91kzk2PAcDTW9gb54h4FRWyuXp\n\
+         oQIDAQAB\n\
+         -----END PUBLIC KEY-----\n".as_bytes()
+    );
+}
