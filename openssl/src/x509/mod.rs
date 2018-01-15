@@ -799,10 +799,11 @@ impl X509ReqRef {
         }
     }
 
-    pub fn public_key(&self) -> Result<PKey, ErrorStack> {
+    pub fn public_key(&self) -> &PKeyRef {
         unsafe {
             let pkey = ffi::X509_REQ_get_pubkey(self.as_ptr());
-            Ok(PKey::from_ptr(pkey))
+            assert!(!pkey.is_null());
+            PKeyRef::from_ptr(pkey)
         }
     }
 }

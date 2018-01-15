@@ -288,7 +288,7 @@ fn clone_x509() {
 fn x509_req_pubkey() {
     let req = include_bytes!("../../test/req.pem");
     let req = X509Req::from_pem(req).unwrap();
-    let pkey = req.public_key().unwrap();
+    let pkey = req.public_key();
     assert_eq!(
         pkey.public_key_to_pem().unwrap().as_slice(),
         "-----BEGIN PUBLIC KEY-----\n\
