@@ -12,8 +12,9 @@ use std::slice;
 use std::str;
 
 use {cvt, cvt_n, cvt_p};
-use asn1::{Asn1BitStringRef, Asn1IntegerRef, Asn1ObjectRef, Asn1StringRef, Asn1TimeRef};
+use asn1::{Asn1BitStringRef, Asn1IntegerRef, Asn1ObjectRef, Asn1StringRef, Asn1Time, Asn1TimeRef};
 use bio::MemBioSlice;
+use bn::{BigNum, MsbOption};
 use conf::ConfRef;
 use error::ErrorStack;
 use ex_data::Index;
@@ -778,6 +779,48 @@ impl X509Req {
             ))?;
             Ok(X509Req::from_ptr(handle))
         }
+    }
+
+    pub fn sign(self, ca_cert: &X509Ref, ca_pkey: &PKeyRef) -> Result<X509, ErrorStack> {
+        let mut cert_builder = X509::builder()?;
+        cert_builder.set_version(2)?;
+        let serial_number = {
+            let mut serial = BigNum::new()?;
+            serial.rand(159, MsbOption::MAYBE_ZERO, false)?;
+            serial.to_asn1_integer()?
+        };
+        cert_builder.set_serial_number(&serial_number)?;
+        cert_builder.set_subject_name(self.subject_name())?;
+        cert_builder.set_issuer_name(ca_cert.subject_name())?;
+        cert_builder.set_pubkey(&self.public_key())?;
+        let not_before = Asn1Time::days_from_now(0)?;
+        cert_builder.set_not_before(&not_before)?;
+        let not_after = Asn1Time::days_from_now(365)?;
+        cert_builder.set_not_after(&not_after)?;
+
+        cert_builder.append_extension(extension::BasicConstraints::new().build()?)?;
+
+        cert_builder.append_extension(extension::KeyUsage::new()
+            .critical()
+            .non_repudiation()
+            .digital_signature()
+            .key_encipherment()
+            .build()?)?;
+
+        let subject_key_identifier =
+            extension::SubjectKeyIdentifier::new().build(&cert_builder.x509v3_context(Some(ca_cert), None))?;
+        cert_builder.append_extension(subject_key_identifier)?;
+
+        let auth_key_identifier = extension::AuthorityKeyIdentifier::new()
+            .keyid(false)
+            .issuer(false)
+            .build(&cert_builder.x509v3_context(Some(ca_cert), None))?;
+        cert_builder.append_extension(auth_key_identifier)?;
+
+        cert_builder.sign(&ca_pkey, MessageDigest::sha256())?;
+        let cert = cert_builder.build();
+
+        Ok(cert)
     }
 
     from_der!(X509Req, ffi::d2i_X509_REQ);

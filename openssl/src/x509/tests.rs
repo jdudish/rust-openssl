@@ -302,3 +302,14 @@ fn x509_req_pubkey() {
          -----END PUBLIC KEY-----\n".as_bytes()
     );
 }
+
+#[test]
+fn x509_req_sign() {
+    let req = include_bytes!("../../test/req.pem");
+    let req = X509Req::from_pem(req).unwrap();
+    let ca_cert = include_bytes!("../../test/root-ca.pem");
+    let ca_cert = X509::from_pem(ca_cert).unwrap();
+    let ca_key = include_bytes!("../../test/root-ca.key");
+    let ca_key = PKey::private_key_from_pem(ca_key).unwrap();
+    let signed_cert = req.sign(&ca_cert, &ca_key).unwrap();
+}
