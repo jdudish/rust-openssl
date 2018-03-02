@@ -782,6 +782,10 @@ impl X509Req {
     }
 
     pub fn sign(self, ca_cert: &X509Ref, ca_pkey: &PKeyRef) -> Result<X509, ErrorStack> {
+        self.sign_with_days(ca_cert, ca_pkey, 365)
+    }
+
+    pub fn sign_with_days(self, ca_cert: &X509Ref, ca_pkey: &PKeyRef, valid_for_days: u32) -> Result<X509, ErrorStack> {
         let mut cert_builder = X509::builder()?;
         cert_builder.set_version(2)?;
         let serial_number = {
@@ -795,7 +799,7 @@ impl X509Req {
         cert_builder.set_pubkey(&self.public_key())?;
         let not_before = Asn1Time::days_from_now(0)?;
         cert_builder.set_not_before(&not_before)?;
-        let not_after = Asn1Time::days_from_now(365)?;
+        let not_after = Asn1Time::days_from_now(valid_for_days)?;
         cert_builder.set_not_after(&not_after)?;
 
         cert_builder.append_extension(extension::BasicConstraints::new().build()?)?;

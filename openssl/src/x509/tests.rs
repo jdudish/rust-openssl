@@ -311,5 +311,16 @@ fn x509_req_sign() {
     let ca_cert = X509::from_pem(ca_cert).unwrap();
     let ca_key = include_bytes!("../../test/root-ca.key");
     let ca_key = PKey::private_key_from_pem(ca_key).unwrap();
-    let signed_cert = req.sign(&ca_cert, &ca_key).unwrap();
+    let _signed_cert = req.sign(&ca_cert, &ca_key).unwrap();
+}
+
+#[test]
+fn x509_req_sign_with_days() {
+    let req = include_bytes!("../../test/req.pem");
+    let req = X509Req::from_pem(req).unwrap();
+    let ca_cert = include_bytes!("../../test/root-ca.pem");
+    let ca_cert = X509::from_pem(ca_cert).unwrap();
+    let ca_key = include_bytes!("../../test/root-ca.key");
+    let ca_key = PKey::private_key_from_pem(ca_key).unwrap();
+    req.sign_with_days(&ca_cert, &ca_key, 3650).unwrap();
 }
